@@ -1,29 +1,35 @@
 import express from "express";
-import twilio from "twilio";
+import cors from "cors";
+import helmet from "helmet";
+import morgan from "morgan";
+import dotenv from "dotenv";
 
-const router = express.Router();
+dotenv.config();
 
-router.post("/", async (req, res) => {
-  try {
-    const incomingMessage = req.body.Body;
-    const sender = req.body.From;
+const app = express();
+const port = Number(process.env.PORT) || 5000;
 
-    console.log("WhatsApp Message:", incomingMessage);
-    console.log("Sender:", sender);
+app.use(cors());
+app.use(helmet());
+app.use(morgan("dev"));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-    // Temporary AI response
-    const aiReply = `Saarthi AI says: ${incomingMessage}`;
+import paymentRoutes from "./routes/payment";
+import whatsappRoutes from "./routes/whatsapp";
+import agentRoutes from "./routes/agent";
 
-    const twiml = new twilio.twiml.MessagingResponse();
+app.use("/api/payment", paymentRoutes);
+app.use("/api/whatsapp", whatsappRoutes);
+app.use("/api/agent", agentRoutes);
 
-    twiml.message(aiReply);
-
-    res.writeHead(200, { "Content-Type": "text/xml" });
-    res.end(twiml.toString());
-  } catch (error) {
-    console.error(error);
-    res.sendStatus(500);
-  }
+app.get("/health", (req, res) => {
+  res.status(200).json({
+    status: "OK",
+    message: "Saarthi AI Backend is running",
+  });
 });
 
-export default router;
+app.listen(port, "0.0.0.0", () => {
+  console.log(`🚀 Server running on port ${port}`);
+});
